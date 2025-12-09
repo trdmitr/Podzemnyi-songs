@@ -119,80 +119,37 @@
 
   Papa.parse(CSV_URL, {
     download: true,
-    header: false,
+    header: false, // без заголовков
     skipEmptyLines: true,
     complete: function(results) {
-      let data = results.data.filter(row => row.length > 0 && row.some(cell => cell.trim() !== ''));
+      let data = results.data.filter(row => row.length >= 2 && row[0].trim() !== '' && row[1].trim() !== '');
 
       if (data.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="100">Нет данных</td></tr>';
         return;
       }
 
-      // Ищем заголовки
-      let headers = [];
-      let rows = data;
+      // Ищем первого исполнителя (первый элемент в первом столбце)
+      const originalPerformer = data[0][0] || 'Неизвестный исполнитель';
+      performerEl.textContent = `Каверы русского рока • Исполняет: ${originalPerformer} • Обновляется автоматически`;
 
-      if (rows.length > 0) {
-        const firstRow = rows[0];
-        if (firstRow.length >= 3 && 
-            firstRow.every((cell, i) => cell && cell.trim().length > 0 && !/^\d+$/.test(cell))) {
-          headers = firstRow.map(h => h.trim());
-          rows = rows.slice(1);
-        } else {
-          headers = Array.from({ length: firstRow.length }, (_, i) => `Column ${i + 1}`);
-        }
-      }
+      // Заголовки таблицы — убираем "Column 1", "Column 2"
+      tableHead.innerHTML = '<th>Исполнитель</th><th>Песня</th>';
 
-      // Ищем столбец с названием песни
-      const titleColumnIndex = headers.findIndex(header => 
-        /название|песня|title|name|имя/i.test(header)
-      );
-      const titleCol = titleColumnIndex !== -1 ? titleColumnIndex : 0;
-
-      // Ищем столбец "Исполнитель"
-      const performerColumnIndex = headers.findIndex(header => 
-        /исполнитель|автор|artist|группа|band/i.test(header)
-      );
-
-      // Создаём объекты
-      const parsedData = rows.map(row => {
-        const obj = {};
-        headers.forEach((header, index) => {
-          obj[header] = row[index] ? row[index].trim() : '';
-        });
-        return obj;
-      });
-
-      // Заголовки таблицы
-      tableHead.innerHTML = headers.map(h => `<th>${escapeHtml(h)}</th>`).join('');
-
-      // Таблица — всё как есть
-      tableBody.innerHTML = parsedData.map(row => {
-        const cells = headers.map(h => `<td>${escapeHtml(row[h] || '')}</td>`).join('');
-        return `<tr>${cells}</tr>`;
+      // Таблица — все строки
+      tableBody.innerHTML = data.map(row => {
+        const performer = escapeHtml(row[0]);
+        const song = escapeHtml(row[1]);
+        return `<tr><td><strong>${performer}</strong></td><td>${song}</td></tr>`;
       }).join('');
 
-      // Карточки — только название
-      cardsContainer.innerHTML = parsedData.map(row => {
-        const title = row[headers[titleCol]] || 'Без названия';
-        return `<div class="card"><h3>${escapeHtml(title)}</h3></div>`;
+      // Карточки — только название песни
+      cardsContainer.innerHTML = data.map(row => {
+        const song = row[1] || 'Без названия';
+        return `<div class="card"><h3>${escapeHtml(song)}</h3></div>`;
       }).join('');
 
-      // Определяем оригинального исполнителя (первый в списке)
-      let originalPerformer = '';
-      if (performerColumnIndex !== -1 && parsedData.length > 0) {
-        originalPerformer = parsedData[0][headers[performerColumnIndex]] || '';
-      }
-
-      // Если нашли исполнителя — добавляем его в подзаголовок
-      if (originalPerformer) {
-        performerEl.textContent = `Каверы русского рока • Оригинальный исполнитель: ${originalPerformer} • Обновляется автоматически`;
-      } else {
-        performerEl.textContent = `Каверы русского рока • Обновляется автоматически`;
-      }
-
-      // Время обновления   
+      // Время обновления
       const now = new Date();
       updateTimeEl.textContent = now.toLocaleString('ru-RU');
     },
@@ -205,7 +162,7 @@
   function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML;
+    return div.innerHTML; 
   }
 </script>
 </body>
