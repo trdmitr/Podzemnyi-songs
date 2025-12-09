@@ -108,7 +108,7 @@
     Данные из Google Таблицы • Обновлено: <span id="update-time"></span>
   </footer>
 
-<script>
+<<script>
   const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSG-0QXXOog8H7EFyAMIA-XBh0JFM_e9X-EOkpBzhg5XszVoMbHbDoEAYFLLtCiA/pub?output=csv';
 
   const tableHead = document.querySelector('#songs-table thead tr');
@@ -122,32 +122,55 @@
     header: false, // без заголовков
     skipEmptyLines: true,
     complete: function(results) {
-      let data = results.data.filter(row => row.length >= 2 && row[0].trim() !== '' && row[1].trim() !== '');
+      let data = results.data.filter(row => row.length > 0 && (row[0] || row[1]) && (row[0].trim() !== '' || row[1].trim() !== ''));
 
       if (data.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="100">Нет данных</td></tr>';
         return;
       }
 
-      // Ищем первого исполнителя (первый элемент в первом столбце)
-      const originalPerformer = data[0][0] || 'Неизвестный исполнитель';
-      performerEl.textContent = `Каверы русского рока • Исполняет: ${originalPerformer} • Обновляется автоматически`;
+      // Проверяем, не являются ли первые строки заголовками
+      let headers = [];
+      let rows = data;
 
-      // Заголовки таблицы — убираем "Column 1", "Column 2"
-      tableHead.innerHTML = '<th>Исполнитель</th><th>Песня</th>';
+      if (rows.length > 0) {
+        const firstRow = rows[0];
+        // Если первая строка содержит текст (не цифры) и длиннее 2 символов — считаем её заголовками
+        if (firstRow.length >= 2 && 
+            firstRow.every(cell => cell && cell.trim().length > 0 && !/^\d+$/.test(cell))) {
+          headers = firstRow.map(h => h.trim());
+          rows = rows.slice(1); // пропускаем первую строку
+        }
+      }
+
+      // Если не нашли заголовки — создаём их
+      if (headers.length === 0) {
+        headers = ['Исполнитель', 'Песня'];
+      }
+
+      // Заголовки таблицы
+      tableHead.innerHTML = headers.map(h => `<th>${escapeHtml(h)}</th>`).join('');
 
       // Таблица — все строки
-      tableBody.innerHTML = data.map(row => {
-        const performer = escapeHtml(row[0]);
-        const song = escapeHtml(row[1]);
+      tableBody.innerHTML = rows.map(row => {
+        const performer = escapeHtml(row[0] || '');
+        const song = escapeHtml(row[1] || '');
         return `<tr><td><strong>${performer}</strong></td><td>${song}</td></tr>`;
       }).join('');
 
       // Карточки — только название песни
-      cardsContainer.innerHTML = data.map(row => {
+      cardsContainer.innerHTML = rows.map(row => {
         const song = row[1] || 'Без названия';
         return `<div class="card"><h3>${escapeHtml(song)}</h3></div>`;
       }).join('');
+
+      // Определяем первого исполнителя для подзаголовка
+      let originalPerformer = '';
+      if (rows.length > 0) {
+        originalPerformer = rows[0][0] || 'Неизвестный исполнитель';
+      }
+
+      performerEl.textContent = `Каверы русского рока • Исполняет: ${originalPerformer} • Обновляется автоматически`;
 
       // Время обновления
       const now = new Date();
@@ -162,7 +185,7 @@
   function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
-    return div.innerHTML; 
+    return div.innerHTML;
   }
 </script>
 </body>
