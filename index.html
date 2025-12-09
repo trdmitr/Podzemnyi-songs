@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Репертуар Виталия Подземного</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.5;
+      color: #222;
+      background-color: #fafafa;
+      padding: 16px;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 24px;
+      padding: 16px 0;
+    }
+    h1 {
+      font-weight: 700;
+      font-size: 1.8rem;
+      color: #1a56db;
+    }
+    .meta {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 8px;
+    }
+
+    /* Таблица — десктоп */
+    .table-container {
+      overflow-x: auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+      margin-bottom: 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      font-weight: 600;
+      color: #4b5563;
+    }
+    tr:hover td {
+      background-color: #f1f5f9;
+    }
+
+    /* Карточки — мобильные устройства */
+    .cards { display: none; }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .card h3 { margin-bottom: 6px; font-size: 1.2rem; }
+    .card p { margin: 4px 0; color: #4b5563; font-size: 0.95rem; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      font-size: 0.85rem;
+      color: #777;
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid #eee;
+    }
+
+    /* Адаптив */
+    @media (max-width: 768px) {
+      .table-container { display: none; }
+      .cards { display: block; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Репертуар Виталия Подземного</h1>
+    <div class="meta">Каверы русского рока • Обновляется автоматически</div>
+  </header>
+
+  <main>
+    <div class="table-container">
+      <table id="songs-table">
+        <thead><tr></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="cards" id="songs-cards"></div>
+  </main>
+
+  <footer>
+    Данные из Google Таблицы • Обновлено: <span id="update-time"></span>
+  </footer>
+
+<script>
+  const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSG-0QXXOog8H7EFyAMIA-XBh0JFM_e9X-EOkpBzhg5XszVoMbHbDoEAYFLLtCiA/pub?output=csv';
+
+  const tableHead = document.querySelector('#songs-table thead tr');
+  const tableBody = document.querySelector('#songs-table tbody');
+  const cardsContainer = document.getElementById('songs-cards');
+  const updateTimeEl = document.getElementById('update-time');
+  const performerEl = document.querySelector('header .meta'); // элемент, куда вставим исполнителя
+
+  Papa.parse(CSV_URL, {
+    download: true,
+    header: false,
+    skipEmptyLines: true,
+    complete: function(results) {
+      let data = results.data.filter(row => row.length > 0 && row.some(cell => cell.trim() !== ''));
+
+      if (data.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="100">Нет данных</td></tr>';
+        return;
+      }
+
+      // Ищем заголовки
+      let headers = [];
+      let rows = data;
+
+      if (rows.length > 0) {
+        const firstRow = rows[0];
+        if (firstRow.length >= 3 && 
+            firstRow.every((cell, i) => cell && cell.trim().length > 0 && !/^\d+$/.test(cell))) {
+          headers = firstRow.map(h => h.trim());
+          rows = rows.slice(1);
+        } else {
+          headers = Array.from({ length: firstRow.length }, (_, i) => `Column ${i + 1}`);
+        }
+      }
+
+      // Ищем столбец с названием песни
+      const titleColumnIndex = headers.findIndex(header => 
+        /название|песня|title|name|имя/i.test(header)
+      );
+      const titleCol = titleColumnIndex !== -1 ? titleColumnIndex : 0;
+
+      // Ищем столбец "Исполнитель"
+      const performerColumnIndex = headers.findIndex(header => 
+        /исполнитель|автор|artist|группа|band/i.test(header)
+      );
+
+      // Создаём объекты
+      const parsedData = rows.map(row => {
+        const obj = {};
+        headers.forEach((header, index) => {
+          obj[header] = row[index] ? row[index].trim() : '';
+        });
+        return obj;
+      });
+
+      // Заголовки таблицы
+      tableHead.innerHTML = headers.map(h => `<th>${escapeHtml(h)}</th>`).join('');
+
+      // Таблица — всё как есть
+      tableBody.innerHTML = parsedData.map(row => {
+        const cells = headers.map(h => `<td>${escapeHtml(row[h] || '')}</td>`).join('');
+        return `<tr>${cells}</tr>`;
+      }).join('');
+
+      // Карточки — только название
+      cardsContainer.innerHTML = parsedData.map(row => {
+        const title = row[headers[titleCol]] || 'Без названия';
+        return `<div class="card"><h3>${escapeHtml(title)}</h3></div>`;
+      }).join('');
+
+      // Определяем оригинального исполнителя (первый в списке)
+      let originalPerformer = '';
+      if (performerColumnIndex !== -1 && parsedData.length > 0) {
+        originalPerformer = parsedData[0][headers[performerColumnIndex]] || '';
+      }
+
+      // Если нашли исполнителя — добавляем его в подзаголовок
+      if (originalPerformer) {
+        performerEl.textContent = `Каверы русского рока • Оригинальный исполнитель: ${originalPerformer} • Обновляется автоматически`;
+      } else {
+        performerEl.textContent = `Каверы русского рока • Обновляется автоматически`;
+      }
+
+      // Время обновления   
+      const now = new Date();
+      updateTimeEl.textContent = now.toLocaleString('ru-RU');
+    },
+    error: function(err) {
+      console.error('Ошибка загрузки CSV:', err);
+      tableBody.innerHTML = '<tr><td colspan="100" style="color:red">Ошибка загрузки данных. Проверьте URL.</td></tr>';
+    }
+  });
+
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>
+</body>
+</html>
