@@ -54,15 +54,15 @@
     .accordion-header.active::after {
       content: '▾';
     }
-    .accordion-body {
-      background: white;
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    .accordion-body.active {
-      max-height: 500px;
-    }
+.accordion-body {
+  background: white;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.accordion-body.active {
+  max-height: none !important;
+}
     .song {
       padding: 12px 16px;
       border-bottom: 1px solid #eee;
