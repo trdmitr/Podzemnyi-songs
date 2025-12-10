@@ -44,7 +44,7 @@
       suggestionsEl.style.display = 'none';
     }
 
-    window.fillSearch = function(text) {
+        fillSearch = function(text) {
       searchInput.value = text;
       filterGroups(text);
       hideSuggestions();
@@ -87,7 +87,7 @@
 }
 
 // Делаем функцию доступной для onclick
-window.copyToClipboard = copyToClipboard;
+    copyToClipboard = copyToClipboard;
     function toggleAccordion(header) {
       const body = header.nextElementSibling;
       header.classList.toggle('active');
