@@ -30,6 +30,63 @@
       margin-top: 8px;
     }
 
+    /* === ДОБАВЛЕНО: лоадер и поиск === */
+    #loader {
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 1.2rem;
+      color: #666;
+    }
+    #loader.spinner::after {
+      content: '';
+      display: inline-block;
+      width: 24px;
+      height: 24px;
+      margin-left: 12px;
+      border: 3px solid #f3f3f3;
+      border-top: 3px solid #1a56db;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #search-group {
+      width: 100%;
+      max-width: 500px;
+      padding: 10px 16px;
+      margin: 0 auto 24px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      display: block;
+    }
+
+    #suggestions {
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 500px;
+      background: white;
+      border: 1px solid #ddd;
+      border-top: none;
+      border-radius: 0 0 6px 6px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 10;
+      list-style: none;
+      display: none;
+    }
+    #suggestions li {
+      padding: 8px 16px;
+      cursor: pointer;
+    }
+    #suggestions li:hover {
+      background: #f1f5f9;
+    }
+    /* === конец добавлений === */
+
     /* Аккордеон */
     .accordion {
       margin-bottom: 16px;
@@ -54,15 +111,15 @@
     .accordion-header.active::after {
       content: '▾';
     }
-.accordion-body {
-  background: white;
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease;
-}
-.accordion-body.active {
-  max-height: none !important;
-}
+    .accordion-body {
+      background: white;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .accordion-body.active {
+      max-height: none !important;
+    }
     .song {
       padding: 12px 16px;
       border-bottom: 1px solid #eee;
@@ -79,15 +136,39 @@
       padding-top: 16px;
       border-top: 1px solid #eee;
     }
+    .copy-btn {
+  margin-left: 8px;
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  background: #e5e7eb;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.copy-btn:hover {
+  opacity: 1;
+  background: #d1d5db;
+}
   </style>
 </head>
 <body>
   <header>
     <h1>Репертуар Виталия Подземного</h1>
     <div class="meta">Каверы русского рока • Обновляется автоматически</div>
+    <!-- === ДОБАВЛЕНО: поле поиска и автодополнение === -->
+    <div style="position: relative; width: 100%; max-width: 500px; margin: 0 auto;">
+      <input type="text" id="search-group" placeholder="🔍 Поиск по исполнителю" autocomplete="off" />
+      <ul id="suggestions"></ul>
+    </div>
+    <!-- === конец === -->
   </header>
 
-  <main id="accordion-container"></main>
+  <!-- === ДОБАВЛЕНО: лоадер === -->
+  <div id="loader" class="spinner">Загрузка репертуара…</div>
+  <!-- === конец === -->
+
+  <main id="accordion-container" style="display: none;"></main>
 
   <footer>
     Данные из Google Таблицы • Обновлено: <span id="update-time"></span>
@@ -96,59 +177,94 @@
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSG-0QXXOog8H7EFyAMIA-XBh0JFM_e9X-EOkpBzhg5XszVoMbHbDoEAYFLLtCiA/pub?output=csv';
 
+    const loaderEl = document.getElementById('loader');
     const container = document.getElementById('accordion-container');
     const updateTimeEl = document.getElementById('update-time');
+    const searchInput = document.getElementById('search-group');
+    const suggestionsEl = document.getElementById('suggestions');
 
-    Papa.parse(CSV_URL, {
-      download: true,
-      header: false,
-      skipEmptyLines: true,
-      complete: function(results) {
-        let data = results.data.filter(row => row.length > 0 && row[0] && row[0].trim() !== '');
+    let allGroups = []; // [{name: 'Кино', songs: [...]}]
 
-        if (data.length === 0) {
-          container.innerHTML = '<div class="accordion"><div class="accordion-header">Нет данных</div></div>';
-          return;
-        }
+    // === ДОБАВЛЕНО: управление лоадером ===
+    function showLoader() {
+      loaderEl.style.display = 'block';
+      container.style.display = 'none';
+    }
+    function hideLoader() {
+      loaderEl.style.display = 'none';
+      container.style.display = 'block';
+    }
+    // === конец ===
 
-        // Группируем данные
-        const groups = [];
-        let currentGroup = { name: '', songs: [] };
+    // === ДОБАВЛЕНО: поиск и автодополнение ===
+    function filterGroups(query) {
+      query = query.trim().toLowerCase();
+      const filtered = query
+        ? allGroups.filter(g => g.name.toLowerCase().includes(query))
+        : allGroups;
 
-        data.forEach(row => {
-          const item = row[0].trim();
-          if (item.startsWith('[ГРУППА]')) {
-            // Сохраняем предыдущую группу
-            if (currentGroup.name) groups.push(currentGroup);
-            currentGroup = { name: item.replace('[ГРУППА]', '').trim(), songs: [] };
-          } else {
-            currentGroup.songs.push(item);
-          }
-        });
-        if (currentGroup.name) groups.push(currentGroup);
+      renderGroups(filtered);
+    }
 
-        // Рендерим аккордеон
-        container.innerHTML = groups.map((group, idx) => `
-          <div class="accordion">
-            <div class="accordion-header" onclick="toggleAccordion(this)">
-              ${escapeHtml(group.name)} (${group.songs.length})
-            </div>
-            <div class="accordion-body">
-              ${group.songs.map(song => `<div class="song">${escapeHtml(song)}</div>`).join('')}
-            </div>
-          </div>
-        `).join('');
-
-        // Время обновления
-        const now = new Date();
-        updateTimeEl.textContent = now.toLocaleString('ru-RU');
-      },
-      error: function(err) {
-        console.error('Ошибка загрузки CSV:', err);
-        container.innerHTML = `<div class="accordion"><div class="accordion-header" style="color:red">Ошибка загрузки</div></div>`;
+    function showSuggestions(items) {
+      if (items.length === 0) {
+        suggestionsEl.style.display = 'none';
+        return;
       }
-    });
+      suggestionsEl.innerHTML = items.map(g =>
+        `<li onclick="fillSearch('${escapeHtml(g.name)}')">${escapeHtml(g.name)}</li>`
+      ).join('');
+      suggestionsEl.style.display = 'block';
+    }
 
+    function hideSuggestions() {
+      suggestionsEl.style.display = 'none';
+    }
+
+    window.fillSearch = function(text) {
+      searchInput.value = text;
+      filterGroups(text);
+      hideSuggestions();
+      searchInput.focus();
+    };
+    // === конец ===
+
+    function renderGroups(groups) {
+      container.innerHTML = groups.map((group, idx) => `
+        <div class="accordion">
+          <div class="accordion-header" onclick="toggleAccordion(this)">
+            ${escapeHtml(group.name)} (${group.songs.length})
+          </div>
+          <div class="accordion-body">
+           ${group.songs.map(song => 
+  `<div class="song">
+     ${escapeHtml(song)}
+     <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(song)}')">📋</button>
+   </div>`
+).join('')}
+          </div>
+        </div>
+      `).join('');
+    }
+    function copyToClipboard(text) {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).then(() => {
+      alert(`✅ Скопировано: ${text}`);
+    });
+  } else {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert(`✅ Скопировано: ${text}`);
+  }
+}
+
+// Делаем функцию доступной для onclick
+window.copyToClipboard = copyToClipboard;
     function toggleAccordion(header) {
       const body = header.nextElementSibling;
       header.classList.toggle('active');
@@ -160,6 +276,71 @@
       div.textContent = text;
       return div.innerHTML;
     }
+
+    // === ЗАГРУЗКА ===
+    showLoader();
+
+    Papa.parse(CSV_URL, {
+      download: true,
+      header: false,
+      skipEmptyLines: true,
+      complete: function(results) {
+        let data = results.data.filter(row => row.length > 0 && row[0] && row[0].trim() !== '');
+
+        if (data.length === 0) {
+          container.innerHTML = '<div class="accordion"><div class="accordion-header">Нет данных</div></div>';
+          hideLoader();
+          return;
+        }
+
+        // Группируем данные — НЕ МЕНЯЕМ логику!
+        const groups = [];
+        let currentGroup = { name: '', songs: [] };
+
+        data.forEach(row => {
+          const item = row[0].trim();
+          if (item.startsWith('[ГРУППА]')) {
+            if (currentGroup.name) groups.push(currentGroup);
+            currentGroup = { name: item.replace('[ГРУППА]', '').trim(), songs: [] };
+          } else {
+            currentGroup.songs.push(item);
+          }
+        });
+        if (currentGroup.name) groups.push(currentGroup);
+
+        allGroups = groups;
+        renderGroups(groups);
+
+        const now = new Date();
+        updateTimeEl.textContent = now.toLocaleString('ru-RU');
+
+        hideLoader();
+      },
+      error: function(err) {
+        console.error('Ошибка загрузки CSV:', err);
+        container.innerHTML = `<div class="accordion"><div class="accordion-header" style="color:red">Ошибка загрузки</div></div>`;
+        hideLoader();
+      }
+    });
+
+    // === ДОБАВЛЕНО: слушатели ===
+    searchInput.addEventListener('input', () => {
+      const q = searchInput.value;
+      filterGroups(q);
+      if (q.trim()) {
+        const matches = allGroups
+          .filter(g => g.name.toLowerCase().includes(q.toLowerCase()))
+          .slice(0, 6);
+        showSuggestions(matches);
+      } else {
+        hideSuggestions();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('header')) hideSuggestions();
+    });
+    // === конец ===
   </script>
 </body>
 </html>
