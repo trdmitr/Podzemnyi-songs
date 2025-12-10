@@ -62,32 +62,64 @@
            ${group.songs.map(song => 
   `<div class="song">
      ${escapeHtml(song)}
-     <button class="copy-btn" onclick="copyToClipboard('${escapeHtml(song)}')">📋</button>
+    <button class="copy-btn" title="Заказать песню" 
+        onclick="donateForSong('${escapeHtml(song)}')">🎁Заказать песню</button>
    </div>`
 ).join('')}
           </div>
         </div>
       `).join('');
     }
-    function copyToClipboard(text) {
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(() => {
-      alert(`✅ Скопировано: ${text}`);
-    });
-  } else {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.position = 'fixed';
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    alert(`✅ Скопировано: ${text}`);
-  }
+function donateForSong(songName) {
+  // Опционально: логгируем (для статистики "какие песни чаще поддерживают")
+  console.log('Поддержка для:', songName);
+
+  const modal = document.createElement('div');
+  modal.innerHTML = `
+    <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;">
+      <div style="background:white;border-radius:16px;padding:24px;max-width:95%;width:420px;font-family:sans-serif;box-shadow:0 10px 30px rgba(0,0,0,0.3);">
+        <h3 style="margin:0 0 14px;color:#1a56db;font-size:1.3rem;">Поддержать исполнение: <em>${escapeHtml(songName)}</em></h3>
+        
+        <p style="margin-bottom:16px;font-size:0.95rem;color:#555;line-height:1.5;">
+          RU → KZ Переводы из РФ — <strong>без комиссии с карты Тинькофф РФ в Казахстан.</strong> 
+          💳 (Kaspi Visa):  4400 4303 5158 7859 
+        </p>
+
+        <a href="https://new.donatepay.ru/@581577" target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
+           style="display:block;width:100%;padding:14px;text-align:center;background:#ff6b6b;color:white;text-decoration:none;border-radius:8px;margin-bottom:12px;font-weight:bold;">
+          🎧DonatePay
+        </a>
+
+        <a href="https://www.donationalerts.com/r/vitaliy_podzemniy" target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
+           style="display:block;width:100%;padding:14px;text-align:center;background:#4a90e2;color:white;text-decoration:none;border-radius:8px;margin-bottom:16px;font-weight:bold;">
+          💙 DonationAlerts
+        </a>
+                <a href="https://destream.net/live/misterfoxxx547/donate" target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
+           style="display:block;width:100%;padding:14px;text-align:center;background:#4a90e2;color:white;text-decoration:none;border-radius:8px;margin-bottom:16px;font-weight:bold;">
+          🌎 Google Pay
+        </a>
+
+        <p style="font-size:0.8rem;color:#888;margin:0;">
+          ⚠️ Не открывается? Отключите <strong>VPN / AdBlock</strong>.
+        </p>
+
+        <button onclick="this.parentElement.parentElement.remove()" 
+                style="width:100%;padding:10px;margin-top:16px;background:#f1f1f1;border:none;border-radius:8px;color:#555;">
+          Закрыть
+        </button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function warnVPN() {
+  // Можно убрать alert, если мешает — он срабатывает только при клике на ссылку
+  // alert("Если страница не загружается — отключите VPN или блокировщик рекламы.");
 }
 
 // Делаем функцию доступной для onclick
-    copyToClipboard = copyToClipboard;
+    // copyToClipboard = copyToClipboard;
     function toggleAccordion(header) {
       const body = header.nextElementSibling;
       header.classList.toggle('active');
