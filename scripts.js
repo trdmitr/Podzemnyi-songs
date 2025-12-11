@@ -84,7 +84,9 @@ function donateForSong(songName) {
           RU → KZ Переводы из РФ — <strong>без комиссии с карты Тинькофф РФ в Казахстан.</strong> 
           💳 (Kaspi Visa):  4400 4303 5158 7859 
         </p>
-
+            <button onclick="copyCard()" style="width:100%;padding:12px;background:#1a56db;color:white;border:none;border-radius:6px;margin-bottom:12px;">
+          💳 Скопировать номер карты для перевода
+        </button>
         <a href="https://new.donatepay.ru/@581577" target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
            style="display:block;width:100%;padding:14px;text-align:center;background:#ff6b6b;color:white;text-decoration:none;border-radius:8px;margin-bottom:12px;font-weight:bold;">
           🎧DonatePay
@@ -111,6 +113,20 @@ function donateForSong(songName) {
     </div>
   `;
   document.body.appendChild(modal);
+}
+function copyCard() {
+  const card = "4400 4303 5158 7859"; 
+  navigator.clipboard.writeText(card.replace(/\s/g, ''))
+    .then(() => alert(`✅ Скопировано: ${card}`))
+    .catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = card.replace(/\s/g, '');
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      alert(`✅ Скопировано: ${card}`);
+    });
 }
 
 function warnVPN() {
