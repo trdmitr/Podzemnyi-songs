@@ -3,17 +3,17 @@
   "name": "Репертуар Виталия Подземного",
   "icons": [
     {
-      "src": "/android-icon-192x192.png",
+      "src": "/Podzemnyi-songs/android-icon-192x192.png",
       "type": "image/png",
       "sizes": "192x192"
     },
     {
-      "src": "/android-icon-512x512.png",
+      "src": "/Podzemnyi-songs/android-icon-512x512.png",
       "type": "image/png",
       "sizes": "512x512"
     }
   ],
-  "start_url": "/",
+  "start_url": "https://trdmitr.github.io/Podzemnyi-songs/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#1a56db",
