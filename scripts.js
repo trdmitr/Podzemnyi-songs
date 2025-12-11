@@ -73,7 +73,9 @@
 function donateForSong(songName) {
   // Опционально: логгируем (для статистики "какие песни чаще поддерживают")
   console.log('Поддержка для:', songName);
-
+  if (typeof ym !== 'undefined') {
+    ym(105800092, 'reachGoal', 'donate_open', { song: songName }); // ← замени 99999999 на свой ID
+  }
   const modal = document.createElement('div');
   modal.innerHTML = `
     <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;">
