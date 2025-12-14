@@ -163,6 +163,7 @@ function warnVPN() {
         if (data.length === 0) {
           container.innerHTML = '<div class="accordion"><div class="accordion-header">Нет данных</div></div>';
           hideLoader();
+          
           return;
         }
 
@@ -183,6 +184,7 @@ function warnVPN() {
 
         allGroups = groups;
         renderGroups(groups);
+        console.log(groups);
 
         const now = new Date();
         updateTimeEl.textContent = now.toLocaleString('ru-RU');
