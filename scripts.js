@@ -56,7 +56,11 @@
       container.innerHTML = groups.map((group, idx) => `
         <div class="accordion">
           <div class="accordion-header" onclick="toggleAccordion(this)">
-            ${escapeHtml(group.name)} (${group.songs.length})
+            
+            ${group.image 
+  ? `<img src="${escapeHtml(group.image)}" width="32" height="32" style="border-radius:4px;margin-right:8px;vertical-align:middle;">` 
+  : ''
+}<strong>${escapeHtml(group.name)}</strong> (${group.songs.length})
           </div>
           <div class="accordion-body">
            ${group.songs.map(song => 
@@ -189,9 +193,13 @@ function warnVPN() {
 
         data.forEach(row => {
           const item = row[0].trim();
-          if (item.startsWith('[ГРУППА]')) {
-            if (currentGroup.name) groups.push(currentGroup);
-            currentGroup = { name: item.replace('[ГРУППА]', '').trim(), songs: [] };
+if (item.startsWith('[ГРУППА]')) {
+  if (currentGroup.name) groups.push(currentGroup);
+  // Берём изображение из следующего столбца (row[1]), если есть
+  const image = row[1] && row[1].trim() ? row[1].trim() : '';
+  const name = item.replace('[ГРУППА]', '').trim();
+  currentGroup = { name, image, songs: [] };
+
           } else {
             currentGroup.songs.push(item);
           }
