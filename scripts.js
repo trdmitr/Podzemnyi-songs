@@ -75,8 +75,7 @@ function donateForSong(songName) {
   console.log('Поддержка для:', songName);
   // внутри donateForSong(songName)
 const daComment = encodeURIComponent(`Поддержка песни: ${songName}`);
-const daUrl = `https://www.donationalerts.com/r/vitaliy_podzemniy?alert_type=14&comment=${daComment}`;
-
+const daUrl = `https://www.donationalerts.com/r/vitaliy_podzemniy?alert_type=14&comment=${encodeURIComponent('Поддержка песни: ' + songName)}`;
   if (typeof ym !== 'undefined') {
     ym(105800092, 'reachGoal', 'donate_open', { song: songName }); // ← замени 99999999 на свой ID
   }
@@ -101,9 +100,10 @@ const daUrl = `https://www.donationalerts.com/r/vitaliy_podzemniy?alert_type=14&
           🎧DonatePay
         </a>
 
-        <a href="${daUrl}" target="_blank" onclick="warnVPN();"
+        <a href="https://www.donationalerts.com/r/vitaliy_podzemniy" target="_blank"
+   onclick="warnVPN(); copyToClipboard('${escapeHtml(songName)}'); this.parentElement.parentElement.remove();"
            style="display:block;width:100%;padding:14px;text-align:center;background:#4a90e2;color:white;text-decoration:none;border-radius:8px;margin-bottom:16px;font-weight:bold;">
-          💙 DonationAlerts
+           💙 DonationAlerts (название песни скопировано → вставьте в комментарий)
         </a>
                 <a href="https://destream.net/live/misterfoxxx547/donate" target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
            style="display:block;width:100%;padding:14px;text-align:center;background:#4a90e2;color:white;text-decoration:none;border-radius:8px;margin-bottom:16px;font-weight:bold;">
@@ -137,7 +137,16 @@ function copyCard() {
       alert(`✅ Скопировано: ${card}`);
     });
 }
-
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
+}
 function warnVPN() {
   // Можно убрать alert, если мешает — он срабатывает только при клике на ссылку
   // alert("Если страница не загружается — отключите VPN или блокировщик рекламы.");
