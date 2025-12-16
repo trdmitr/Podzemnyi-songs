@@ -73,9 +73,16 @@
 function donateForSong(songName) {
   // Опционально: логгируем (для статистики "какие песни чаще поддерживают")
   console.log('Поддержка для:', songName);
+  // внутри donateForSong(songName)
+const daComment = encodeURIComponent(`Поддержка песни: ${songName}`);
+const daUrl = `https://www.donationalerts.com/r/vitaliy_podzemniy?alert_type=14&comment=${daComment}`;
+
   if (typeof ym !== 'undefined') {
     ym(105800092, 'reachGoal', 'donate_open', { song: songName }); // ← замени 99999999 на свой ID
   }
+  if (typeof ym !== 'undefined') {
+  ym(105800092, 'reachGoal', 'da_open', { song: songName });
+}
   const modal = document.createElement('div');
   modal.innerHTML = `
     <div style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;">
@@ -94,7 +101,7 @@ function donateForSong(songName) {
           🎧DonatePay
         </a>
 
-        <a href="https://www.donationalerts.com/r/vitaliy_podzemniy" target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
+        <a href="${daUrl}" target="_blank" onclick="warnVPN();"
            style="display:block;width:100%;padding:14px;text-align:center;background:#4a90e2;color:white;text-decoration:none;border-radius:8px;margin-bottom:16px;font-weight:bold;">
           💙 DonationAlerts
         </a>
