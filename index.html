@@ -30,16 +30,19 @@
 <!-- /Yandex.Metrika counter -->
 </head>
 <body>
+<div class="sticky-header">
   <header>
     <h1>Репертуар Виталия Подземного</h1>
     <div class="meta">Каверы русского рока • Обновляется автоматически</div>
-    <!-- === ДОБАВЛЕНО: поле поиска и автодополнение === -->
-    <div style="position: relative; width: 100%; max-width: 500px; margin: 0 auto;">
-      <input type="text" id="search-group" placeholder="🔍 Поиск по исполнителю" autocomplete="off" />
+    <div id="search-container" style="position: relative; width: 100%; max-width: 500px; margin: 0 auto;">
+      <input type="text" id="search-group" placeholder="🔍 Поиск по исполнителю (группе)…" autocomplete="off" />
       <ul id="suggestions"></ul>
     </div>
-    <!-- === конец === -->
   </header>
+</div>
+<main id="main-content"> <!-- ← добавь id -->
+  <div id="accordion-container"></div>
+</main>
 
   <!-- === ДОБАВЛЕНО: лоадер === -->
   <div id="loader" class="spinner">Загрузка репертуара…</div>
