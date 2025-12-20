@@ -176,27 +176,25 @@ function escapeHtml(text) {
 
 // === ЗАГРУЗКА ИЗ JSONBOX ===
 showLoader();
-const RO_KEY = "ro_a12e782fc6c08adec702a712e2310ed1"; // ← твой read-only ключ
+// const RO_KEY = "ro_a12e782fc6c08adec702a712e2310ed1"; // ← твой read-only ключ
 
-fetch(`https://jsonbox.ru/api.php?action=get&api_key=${RO_KEY}`)
-  .then(res => res.json())
-  .then(response => {
-    const data = Array.isArray(response.data) ? response.data : [];
 
-    // Группируем как раньше (но теперь data — уже массив групп!)
-    const groups = data.map(group => ({
-      name: group.name || '',
-      songs: Array.isArray(group.songs) ? group.songs : [],
-      image: group.image || ''  // Добавляем эту строку
+fetch('data.json')
+  .then(r => r.json())
+  .then(data => {
+    allGroups = Array.isArray(data) ? data : [];
+    // добавляем image || '' — если отсутствует
+    allGroups = allGroups.map(g => ({
+      name: g.name || '',
+      songs: Array.isArray(g.songs) ? g.songs : [],
+      image: g.image || ''
     }));
-
-    allGroups = groups;
-    renderGroups(groups);
+    renderGroups(allGroups);
     updateTimeEl.textContent = new Date().toLocaleString('ru-RU');
     hideLoader();
   })
   .catch(err => {
-    console.error('Ошибка загрузки JSONBox:', err);
+    console.error('Ошибка загрузки data.json:', err);
     container.innerHTML = `<div class="accordion"><div class="accordion-header" style="color:red">❌ Не удалось загрузить данные</div></div>`;
     hideLoader();
   });

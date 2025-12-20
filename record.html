@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Record</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; padding: 20px; max-width: 600px; margin: 0 auto; }
+    input, select, button { padding: 10px; font-size: 1rem; margin: 6px 0; width: 100%; }
+    button { background: #1a56db; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    button.secondary { background: #6b7280; }
+    .hidden { display: none; }
+    #status { margin-top: 16px; padding: 10px; border-radius: 4px; }
+    .success { background: #dcfce7; color: #166534; }
+    .error { background: #fee2e2; color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <h1>🎸 Record</h1>
+
+  <div>
+    <label><strong>Пароль:</strong></label>
+    <input type="password" id="pwd" placeholder="Введите пароль">
+  </div>
+
+  <div id="form" class="hidden">
+    <label><strong>Исполнитель:</strong></label>
+    <select id="performer">
+      <option value="">— Выберите —</option>
+    </select>
+    <button type="button" onclick="toggleNew()">➕ Новый</button>
+
+    <div id="new-performer-div" class="hidden">
+      <label><strong>Новый исполнитель:</strong></label>
+      <input type="text" id="new-performer" placeholder="Например: Виктор Цой">
+    </div>
+
+    <label><strong>Название песни:</strong></label>
+    <input type="text" id="song" placeholder="Например: 18 Берёз">
+
+    <button type="button" onclick="save()">✅ Добавить песню</button>
+  </div>
+
+  <div id="status"></div>
+
+  <button type="button" onclick="window.open('../index.html', '_blank')" class="secondary" style="width:100%;margin-top:24px;">
+    🏠 На главную страницу
+  </button>
+
+  <script>
+    // 🔑 URL твоего сервера на Render (замени на свой!)
+    const API_URL = "https://podzemnyi-auth.onrender.com/api/unlock";
+
+    let currentData = [];
+
+    function load() {
+      fetch('data.json')
+        .then(r => r.json())
+        .then(data => {
+          currentData = Array.isArray(data) ? data : [];
+          renderPerformerSelect();
+        })
+        .catch(() => currentData = []);
+    }
+
+    function renderPerformerSelect() {
+      const sel = document.getElementById('performer');
+      sel.innerHTML = '<option value="">— Выберите —</option>';
+      currentData.forEach(g => {
+        const opt = document.createElement('option');
+        opt.value = g.name;
+        opt.textContent = g.name;
+        sel.appendChild(opt);
+      });
+    }
+
+    function toggleNew() {
+      document.getElementById('new-performer-div').classList.toggle('hidden');
+    }
+
+    function save() {
+      const sel = document.getElementById('performer');
+      const newPerformer = document.getElementById('new-performer').value.trim();
+      const song = document.getElementById('song').value.trim();
+
+      if (!song) return showStatus('❌ Укажите название песни', 'error');
+      let performer = sel.value || newPerformer;
+      if (!performer) return showStatus('❌ Выберите или укажите исполнителя', 'error');
+
+      let group = currentData.find(g => g.name === performer);
+      if (!group) {
+        group = { name: performer, songs: [], image: "" };
+        currentData.push(group);
+      }
+      if (!group.songs.includes(song)) {
+        group.songs.push(song);
+      }
+
+      const blob = new Blob([JSON.stringify(currentData, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'data.json';
+      a.click();
+      URL.revokeObjectURL(a.href);
+
+      showStatus(`✅ Добавлено: ${song} → ${performer}`, 'success');
+      document.getElementById('song').value = '';
+      document.getElementById('new-performer').value = '';
+    }
+
+    function showStatus(text, cls) {
+      const el = document.getElementById('status');
+      el.textContent = text;
+      el.className = cls;
+      setTimeout(() => el.textContent = '', 5000);
+    }
+
+    // ✅ Проверка через Render
+    document.getElementById('pwd').addEventListener('keypress', async (e) => {
+      if (e.key === 'Enter') {
+        const pwd = document.getElementById('pwd').value;
+        const res = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pwd })
+        });
+        if (res.ok) {
+          document.getElementById('form').classList.remove('hidden');
+          load();
+        } else {
+          showStatus('❌ Неверный пароль', 'error');
+        }
+      }
+    });
+  </script>
+</body>
+</html>
