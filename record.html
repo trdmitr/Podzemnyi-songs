@@ -18,9 +18,11 @@
 <body>
   <h1>🎸 Record</h1>
 
-  <div>
-    <label><strong>Пароль:</strong></label>
-    <input type="password" id="pwd" placeholder="Введите пароль">
+  <div id="login" style="text-align:center;">
+    <label><strong>Пароль:</strong></label><br>
+    <input type="password" id="pwd" placeholder="Введите пароль" style="width:80%;margin:0 auto;">
+    <br><br>
+    <button type="button" onclick="login()" style="width:80%;margin:0 auto;">🔐 Войти</button>
   </div>
 
   <div id="form" class="hidden">
@@ -48,10 +50,28 @@
   </button>
 
   <script>
-    // 🔑 URL твоего сервера на Render (замени на свой!)
     const API_URL = "https://podzemnyi-auth.onrender.com/api/unlock";
-
     let currentData = [];
+
+    function login() {
+      const pwd = document.getElementById('pwd').value;
+      fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pwd })
+      })
+      .then(r => r.json().then(data => ({ ok: r.ok, data })))
+      .then(({ ok }) => {
+        if (ok) {
+          document.getElementById('login').style.display = 'none';
+          document.getElementById('form').classList.remove('hidden');
+          load();
+        } else {
+          showStatus('❌ Неверный пароль', 'error');
+        }
+      })
+      .catch(() => showStatus('⚠️ Ошибка подключения', 'error'));
+    }
 
     function load() {
       fetch('data.json')
@@ -114,24 +134,6 @@
       el.className = cls;
       setTimeout(() => el.textContent = '', 5000);
     }
-
-    // ✅ Проверка через Render
-    document.getElementById('pwd').addEventListener('keypress', async (e) => {
-      if (e.key === 'Enter') {
-        const pwd = document.getElementById('pwd').value;
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pwd })
-        });
-        if (res.ok) {
-          document.getElementById('form').classList.remove('hidden');
-          load();
-        } else {
-          showStatus('❌ Неверный пароль', 'error');
-        }
-      }
-    });
   </script>
 </body>
 </html>
