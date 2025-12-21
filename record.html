@@ -50,15 +50,15 @@
   </button>
 
   <script>
-    // 🔐 URL твоего Render-сервера (без пробелов!)
-    const API_URL = "https://podzemnyi-auth.onrender.com/api/save";
+    // 🔑 URL твоего Render-сервиса (без пробелов!)
+    const API_BASE = "https://podzemnyi-auth.onrender.com";
 
     let currentData = [];
 
-    // ✅ Вход: только на сервер
+    // ✅ Вход: проверка пароля на сервере
     async function login() {
       const pwd = document.getElementById('pwd').value;
-      const res = await fetch("https://podzemnyi-auth.onrender.com/api/unlock", {
+      const res = await fetch(`${API_BASE}/api/unlock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pwd })
@@ -66,15 +66,15 @@
       if (res.ok) {
         document.getElementById('login').style.display = 'none';
         document.getElementById('form').classList.remove('hidden');
-        await load(); // загружаем данные после входа
+        await load();
       } else {
         showStatus('❌ Неверный пароль', 'error');
       }
     }
 
-    // ✅ Загрузка данных — с сервера (не с GitHub!)
+    // ✅ Загрузка данных — с сервера
     async function load() {
-      const res = await fetch(API_URL.replace('/save', '/data'));
+      const res = await fetch(`${API_BASE}/api/data`);
       currentData = await res.json();
       renderPerformerSelect();
     }
@@ -94,7 +94,7 @@
       document.getElementById('new-performer-div').classList.toggle('hidden');
     }
 
-    // ✅ Сохранение — только на сервер
+    // ✅ Сохранение — на сервер
     async function save() {
       const sel = document.getElementById('performer');
       const newPerformer = document.getElementById('new-performer').value.trim();
@@ -112,8 +112,8 @@
       }
       if (!group.songs.includes(song)) group.songs.push(song);
 
-      // 🔥 Отправка на Render (без GitHub-токена!)
-      const res = await fetch(API_URL, {
+      // 🔥 Отправка на Render
+      const res = await fetch(`${API_BASE}/api/save`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
