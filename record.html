@@ -50,37 +50,43 @@
   </button>
 
   <script>
-    const API_URL = "https://podzemnyi-auth.onrender.com/api/unlock";
-    let currentData = [];
+    // 🔑 Секретный токен — берётся из Render через прокси (см. ниже)
+  const GITHUB_TOKEN = 'RENDER_PROVIDES_THIS'; // ← не меняй, заменится на сервере
+    // 🔐 Проверка пароля — на Render
+    const AUTH_URL = "https://podzemnyi-auth.onrender.com/api/unlock";
+    // 🔑 Запись — в GitHub
+   
+    const OWNER = "trdmitr";
+    const REPO = "Podzemnyi-songs";
+    const PATH = "data.json";
 
-    function login() {
+    let currentData = [];
+    let currentSha = "";
+
+    async function login() {
       const pwd = document.getElementById('pwd').value;
-      fetch(API_URL, {
+      // 1. Проверяем пароль на Render
+      const authRes = await fetch(AUTH_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pwd })
-      })
-      .then(r => r.json().then(data => ({ ok: r.ok, data })))
-      .then(({ ok }) => {
-        if (ok) {
-          document.getElementById('login').style.display = 'none';
-          document.getElementById('form').classList.remove('hidden');
-          load();
-        } else {
-          showStatus('❌ Неверный пароль', 'error');
-        }
-      })
-      .catch(() => showStatus('⚠️ Ошибка подключения', 'error'));
-    }
+      });
+      if (!authRes.ok) {
+        return showStatus('❌ Неверный пароль', 'error');
+      }
 
-    function load() {
-      fetch('data.json')
-        .then(r => r.json())
-        .then(data => {
-          currentData = Array.isArray(data) ? data : [];
-          renderPerformerSelect();
-        })
-        .catch(() => currentData = []);
+      // 2. Загружаем data.json из GitHub
+      const dataRes = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`, {
+        headers: { Authorization: `Bearer ${GITHUB_TOKEN}` }
+      });
+      const data = await dataRes.json();
+      currentSha = data.sha;
+      currentData = JSON.parse(atob(data.content));
+
+      // 3. Открываем форму
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('form').classList.remove('hidden');
+      renderPerformerSelect();
     }
 
     function renderPerformerSelect() {
@@ -98,35 +104,60 @@
       document.getElementById('new-performer-div').classList.toggle('hidden');
     }
 
-    function save() {
-      const sel = document.getElementById('performer');
-      const newPerformer = document.getElementById('new-performer').value.trim();
-      const song = document.getElementById('song').value.trim();
+async function save() {
+  const sel = document.getElementById('performer');
+  const newPerformer = document.getElementById('new-performer').value.trim();
+  const song = document.getElementById('song').value.trim();
 
-      if (!song) return showStatus('❌ Укажите название песни', 'error');
-      let performer = sel.value || newPerformer;
-      if (!performer) return showStatus('❌ Выберите или укажите исполнителя', 'error');
+  if (!song) return showStatus('❌ Укажите название песни', 'error');
+  let performer = sel.value || newPerformer;
+  if (!performer) return showStatus('❌ Выберите или укажите исполнителя', 'error');
 
-      let group = currentData.find(g => g.name === performer);
-      if (!group) {
-        group = { name: performer, songs: [], image: "" };
-        currentData.push(group);
-      }
-      if (!group.songs.includes(song)) {
-        group.songs.push(song);
-      }
+  // Обновляем данные
+  let group = currentData.find(g => g.name === performer);
+  if (!group) {
+    group = { name: performer, songs: [], image: "" };
+    currentData.push(group);
+  }
+  if (!group.songs.includes(song)) group.songs.push(song);
 
-      const blob = new Blob([JSON.stringify(currentData, null, 2)], { type: 'application/json' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'data.json';
-      a.click();
-      URL.revokeObjectURL(a.href);
+  // 🔥 Запись в GitHub
+  try {
+    // Получаем текущий SHA и содержимое data.json
+    const getRes = await fetch('https://api.github.com/repos/trdmitr/Podzemnyi-songs/contents/data.json', {
+      headers: { 'Authorization': `Bearer ${GITHUB_TOKEN}` }
+    });
+    const { sha } = await getRes.json();
 
-      showStatus(`✅ Добавлено: ${song} → ${performer}`, 'success');
+    // Кодируем содержимое
+    const content = btoa(JSON.stringify(currentData, null, 2));
+
+    // Обновляем
+    const putRes = await fetch('https://api.github.com/repos/trdmitr/Podzemnyi-songs/contents/data.json', {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: `+ ${song} → ${performer}`,
+        content,
+        sha
+      })
+    });
+
+    if (putRes.ok) {
+      showStatus(`✅ Сохранено: ${song} → ${performer}`, 'success');
       document.getElementById('song').value = '';
       document.getElementById('new-performer').value = '';
+    } else {
+      const err = await putRes.text();
+      showStatus(`❌ Ошибка: ${err}`, 'error');
     }
+  } catch (e) {
+    showStatus(`⚠️ Ошибка сети: ${e.message}`, 'error');
+  }
+}
 
     function showStatus(text, cls) {
       const el = document.getElementById('status');
