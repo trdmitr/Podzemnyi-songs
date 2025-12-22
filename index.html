@@ -4,19 +4,19 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <!-- Для iOS (Safari) -->
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Репертуар Виталия">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="/Podzemnyi-songs/manifest.json">
-<!-- Для Android (Chrome) -->
-<meta name="theme-color" content="#1a56db">
-<meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Репертуар Виталия">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/Podzemnyi-songs/manifest.json">
+  <!-- Для Android (Chrome) -->
+  <meta name="theme-color" content="#1a56db">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>Репертуар Виталия Подземного</title>
- <link rel="stylesheet" href="style.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
-<script src="scripts.js" defer></script>
-<!-- Yandex.Metrika counter -->
-<script type="text/javascript">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <script src="scripts.js" defer></script>
+  <!-- Yandex.Metrika counter -->
+  <script type="text/javascript">
     (function(m,e,t,r,i,k,a){
         m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
         m[i].l=1*new Date();
@@ -25,9 +25,9 @@
     })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=105800092', 'ym');
 
     ym(105800092, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", accurateTrackBounce:true, trackLinks:true});
-</script>
-<noscript><div><img src="https://mc.yandex.ru/watch/105800092" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
-<!-- /Yandex.Metrika counter -->
+  </script>
+  <noscript><div><img src="https://mc.yandex.ru/watch/105800092" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+  <!-- /Yandex.Metrika counter -->
 </head>
 <body>
 <div class="sticky-header">
@@ -40,18 +40,14 @@
     </div>
   </header>
 </div>
-<main id="main-content"> <!-- ← добавь id -->
-  <div id="accordion-container"></div>
-</main>
 
-  <!-- === ДОБАВЛЕНО: лоадер === -->
-  <div id="loader" class="spinner">Загрузка репертуара…</div>
-  <!-- === конец === -->
+<!-- === Лоадер === -->
+<div id="loader" class="spinner">Загрузка репертуара…</div>
 
-  <main id="accordion-container" style="display: none;"></main>
+<main id="accordion-container" style="display: none;"></main>
 
-  <footer>
-    Данные из Google Таблицы • Обновлено: <span id="update-time"></span>
-  </footer>
+<footer>
+  Данные из npoint.io • Обновлено: <span id="update-time"></span>
+</footer>
 </body>
 </html>

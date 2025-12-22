@@ -174,27 +174,29 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// === ЗАГРУЗКА ИЗ JSONBOX ===
+// === ЗАГРУЗКА ИЗ NPOINT.IO ===
 showLoader();
-// const RO_KEY = "ro_a12e782fc6c08adec702a712e2310ed1"; // ← твой read-only ключ
+const DATA_URL = "https://api.npoint.io/7e9d254707c612856706";
 
-
-fetch('data.json')
-  .then(r => r.json())
+fetch(DATA_URL)
+  .then(res => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  })
   .then(data => {
-    allGroups = Array.isArray(data) ? data : [];
-    // добавляем image || '' — если отсутствует
-    allGroups = allGroups.map(g => ({
+    const groups = Array.isArray(data) ? data : [];
+    allGroups = groups.map(g => ({
       name: g.name || '',
       songs: Array.isArray(g.songs) ? g.songs : [],
       image: g.image || ''
     }));
     renderGroups(allGroups);
     updateTimeEl.textContent = new Date().toLocaleString('ru-RU');
+    console.log(data);
     hideLoader();
   })
   .catch(err => {
-    console.error('Ошибка загрузки data.json:', err);
+    console.error('Ошибка загрузки npoint.io:', err);
     container.innerHTML = `<div class="accordion"><div class="accordion-header" style="color:red">❌ Не удалось загрузить данные</div></div>`;
     hideLoader();
   });

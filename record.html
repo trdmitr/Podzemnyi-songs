@@ -50,15 +50,14 @@
   </button>
 
   <script>
-    // 🔑 URL твоего Render-сервиса (без пробелов!)
-    const API_BASE = "https://podzemnyi-auth.onrender.com";
+    const AUTH_URL = "https://podzemnyi-auth.onrender.com/api/unlock";
+    const DATA_URL = "https://api.npoint.io/8e2a55cd639b9257de52"; // ← твой bin
 
     let currentData = [];
 
-    // ✅ Вход: проверка пароля на сервере
     async function login() {
       const pwd = document.getElementById('pwd').value;
-      const res = await fetch(`${API_BASE}/api/unlock`, {
+      const res = await fetch(AUTH_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ pwd })
@@ -72,10 +71,10 @@
       }
     }
 
-    // ✅ Загрузка данных — с сервера
     async function load() {
-      const res = await fetch(`${API_BASE}/api/data`);
-      currentData = await res.json();
+      const res = await fetch(DATA_URL);
+      const data = await res.json();
+      currentData = Array.isArray(data) ? data : [];
       renderPerformerSelect();
     }
 
@@ -94,7 +93,6 @@
       document.getElementById('new-performer-div').classList.toggle('hidden');
     }
 
-    // ✅ Сохранение — на сервер
     async function save() {
       const sel = document.getElementById('performer');
       const newPerformer = document.getElementById('new-performer').value.trim();
@@ -104,7 +102,6 @@
       let performer = sel.value || newPerformer;
       if (!performer) return showStatus('❌ Выберите или укажите исполнителя', 'error');
 
-      // Обновляем данные
       let group = currentData.find(g => g.name === performer);
       if (!group) {
         group = { name: performer, songs: [], image: "" };
@@ -112,14 +109,11 @@
       }
       if (!group.songs.includes(song)) group.songs.push(song);
 
-      // 🔥 Отправка на Render
-      const res = await fetch(`${API_BASE}/api/save`, {
-        method: 'POST',
+      // 🔥 Сохраняем в npoint.io — только PUT, без пароля
+      const res = await fetch(DATA_URL, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pwd: document.getElementById('pwd').value,
-          groups: currentData
-        })
+        body: JSON.stringify(currentData)
       });
 
       if (res.ok) {
