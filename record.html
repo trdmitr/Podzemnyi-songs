@@ -51,24 +51,16 @@
 
   <script>
     const AUTH_URL = "https://podzemnyi-auth.onrender.com/api/unlock";
-    const DATA_URL = "https://api.npoint.io/8e2a55cd639b9257de52"; // ← твой bin
+    const DATA_URL = "https://podzemnyi-auth.onrender.com/api/data";
+    const SAVE_URL = "https://podzemnyi-auth.onrender.com/api/save";
 
     let currentData = [];
 
     async function login() {
-      const pwd = document.getElementById('pwd').value;
-      const res = await fetch(AUTH_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ pwd })
-      });
-      if (res.ok) {
-        document.getElementById('login').style.display = 'none';
-        document.getElementById('form').classList.remove('hidden');
-        await load();
-      } else {
-        showStatus('❌ Неверный пароль', 'error');
-      }
+      // Пароль не проверяется — просто открываем форму
+      document.getElementById('login').style.display = 'none';
+      document.getElementById('form').classList.remove('hidden');
+      await load();
     }
 
     async function load() {
@@ -109,9 +101,9 @@
       }
       if (!group.songs.includes(song)) group.songs.push(song);
 
-      // 🔥 Сохраняем в npoint.io — только PUT, без пароля
-      const res = await fetch(DATA_URL, {
-        method: 'PUT',
+      // 🔥 Отправляем ТОЛЬКО данные, без пароля
+      const res = await fetch(SAVE_URL, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(currentData)
       });
