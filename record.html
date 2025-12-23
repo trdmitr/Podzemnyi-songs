@@ -50,79 +50,75 @@
   </button>
 
   <script>
-    const AUTH_URL = "https://podzemnyi-auth.onrender.com/api/unlock";
-    const DATA_URL = "https://podzemnyi-auth.onrender.com/api/data";
-    const SAVE_URL = "https://podzemnyi-auth.onrender.com/api/save";
+  const SAVE_URL = "https://trv-axtuba.ru/podzemnyi/save.php";
+  const DATA_URL = "https://trv-axtuba.ru/podzemnyi/read.php"; // ← ключевая строка
 
-    let currentData = [];
+  let currentData = [];
 
-    async function login() {
-      // Пароль не проверяется — просто открываем форму
-      document.getElementById('login').style.display = 'none';
-      document.getElementById('form').classList.remove('hidden');
-      await load();
+  function login() {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('form').classList.remove('hidden');
+    load();
+  }
+
+  async function load() {
+    const res = await fetch(DATA_URL + '?_=' + Date.now());
+    currentData = await res.json();
+    renderPerformerSelect();
+  }
+
+  function renderPerformerSelect() {
+    const sel = document.getElementById('performer');
+    sel.innerHTML = '<option value="">— Выберите —</option>';
+    currentData.forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.name;
+      opt.textContent = g.name;
+      sel.appendChild(opt);
+    });
+  }
+
+  function toggleNew() {
+    document.getElementById('new-performer-div').classList.toggle('hidden');
+  }
+
+  async function save() {
+    const sel = document.getElementById('performer');
+    const newPerformer = document.getElementById('new-performer').value.trim();
+    const song = document.getElementById('song').value.trim();
+
+    if (!song) return showStatus('❌ Укажите название песни', 'error');
+    let performer = sel.value || newPerformer;
+    if (!performer) return showStatus('❌ Выберите или укажите исполнителя', 'error');
+
+    let group = currentData.find(g => g.name === performer);
+    if (!group) {
+      group = { name: performer, songs: [], image: "" };
+      currentData.push(group);
     }
+    if (!group.songs.includes(song)) group.songs.push(song);
 
-    async function load() {
-      const res = await fetch(DATA_URL);
-      const data = await res.json();
-      currentData = Array.isArray(data) ? data : [];
-      renderPerformerSelect();
+    const res = await fetch(SAVE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(currentData)
+    });
+
+    if (res.ok) {
+      showStatus(`✅ Сохранено: ${song} → ${performer}`, 'success');
+      document.getElementById('song').value = '';
+      document.getElementById('new-performer').value = '';
+    } else {
+      showStatus('❌ Ошибка сервера', 'error');
     }
+  }
 
-    function renderPerformerSelect() {
-      const sel = document.getElementById('performer');
-      sel.innerHTML = '<option value="">— Выберите —</option>';
-      currentData.forEach(g => {
-        const opt = document.createElement('option');
-        opt.value = g.name;
-        opt.textContent = g.name;
-        sel.appendChild(opt);
-      });
-    }
-
-    function toggleNew() {
-      document.getElementById('new-performer-div').classList.toggle('hidden');
-    }
-
-    async function save() {
-      const sel = document.getElementById('performer');
-      const newPerformer = document.getElementById('new-performer').value.trim();
-      const song = document.getElementById('song').value.trim();
-
-      if (!song) return showStatus('❌ Укажите название песни', 'error');
-      let performer = sel.value || newPerformer;
-      if (!performer) return showStatus('❌ Выберите или укажите исполнителя', 'error');
-
-      let group = currentData.find(g => g.name === performer);
-      if (!group) {
-        group = { name: performer, songs: [], image: "" };
-        currentData.push(group);
-      }
-      if (!group.songs.includes(song)) group.songs.push(song);
-
-      // 🔥 Отправляем ТОЛЬКО данные, без пароля
-      const res = await fetch(SAVE_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(currentData)
-      });
-
-      if (res.ok) {
-        showStatus(`✅ Сохранено: ${song} → ${performer}`, 'success');
-        document.getElementById('song').value = '';
-        document.getElementById('new-performer').value = '';
-      } else {
-        showStatus('❌ Ошибка сохранения', 'error');
-      }
-    }
-
-    function showStatus(text, cls) {
-      const el = document.getElementById('status');
-      el.textContent = text;
-      el.className = cls;
-      setTimeout(() => el.textContent = '', 5000);
-    }
-  </script>
+  function showStatus(text, cls) {
+    const el = document.getElementById('status');
+    el.textContent = text;
+    el.className = cls;
+    setTimeout(() => el.textContent = '', 5000);
+  }
+</script>
 </body>
 </html>
