@@ -1,5 +1,3 @@
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQSG-0QXXOog8H7EFyAMIA-XBh0JFM_e9X-EOkpBzhg5XszVoMbHbDoEAYFLLtCiA/pub?output=csv';
-
 const loaderEl = document.getElementById('loader');
 const container = document.getElementById('accordion-container');
 const updateTimeEl = document.getElementById('update-time');
@@ -53,14 +51,9 @@ fillSearch = function (text) {
 // === конец ===
 
 function renderGroups(groups) {
-  //   console.log('renderGroups вызван, groups:', groups);
-  // console.log('Первая группа:', groups[0]);
-  // console.log('image:', groups[0]?.image);
-  
   container.innerHTML = groups.map((group, idx) => `
         <div class="accordion">
           <div class="accordion-header" onclick="toggleAccordion(this)">
-            
             ${group.image
       ? `<img src="${escapeHtml(group.image)}" width="32" height="32" style="border-radius:4px;margin-right:8px;vertical-align:middle;">`
       : ''
@@ -78,16 +71,12 @@ function renderGroups(groups) {
         </div>
       `).join('');
 }
+
 function donateForSong(songName) {
-  // Опционально: логгируем (для статистики "какие песни чаще поддерживают")
   console.log('Поддержка для:', songName);
-  // внутри donateForSong(songName)
-  const daComment = encodeURIComponent(`Поддержка песни: ${songName}`);
   const daUrl = `https://www.donationalerts.com/r/vitaliy_podzemniy?alert_type=14&comment=${encodeURIComponent('Поддержка песни: ' + songName)}`;
   if (typeof ym !== 'undefined') {
-    ym(105800092, 'reachGoal', 'donate_open', { song: songName }); // ← замени 99999999 на свой ID
-  }
-  if (typeof ym !== 'undefined') {
+    ym(105800092, 'reachGoal', 'donate_open', { song: songName });
     ym(105800092, 'reachGoal', 'da_open', { song: songName });
   }
   const modal = document.createElement('div');
@@ -100,30 +89,27 @@ function donateForSong(songName) {
           RU → KZ Переводы из РФ — <strong>без комиссии с карты Тинькофф РФ в Казахстан.</strong> 
           💳 (Kaspi Visa):  4400 4303 5158 7859 
         </p>
-            <button onclick="copyCard()" style="width:100%;padding:12px;background:#1a56db;color:white;border:none;border-radius:6px;margin-bottom:12px;">
+        <button onclick="copyCard()" style="width:100%;padding:12px;background:#1a56db;color:white;border:none;border-radius:6px;margin-bottom:12px;">
           💳 Скопировать номер карты для перевода
         </button>
-        <a href="https://new.donatepay.ru/@581577" target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
+        <a href="https://new.donatepay.ru/@581577  " target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
            style="display:block;width:100%;padding:14px;text-align:center;background:#ff6b6b;color:white;text-decoration:none;border-radius:8px;margin-bottom:12px;font-weight:bold;">
           🎧DonatePay
         </a>
-
-        <a href="https://www.donationalerts.com/r/vitaliy_podzemniy" target="_blank"
-   onclick="warnVPN(); copyToClipboard('${escapeHtml(songName)}'); this.parentElement.parentElement.remove();"
+        <a href="https://www.donationalerts.com/r/vitaliy_podzemniy  " target="_blank"
+           onclick="warnVPN(); copyToClipboard('${escapeHtml(songName)}'); this.parentElement.parentElement.remove();"
            style="display:block;width:100%;padding:14px;text-align:center;background:#4a90e2;color:white;text-decoration:none;border-radius:8px;margin-bottom:16px;font-weight:bold;">
            💙 DonationAlerts (название песни скопировано → вставьте в комментарий)
         </a>
-                <a href="https://destream.net/live/misterfoxxx547/donate" target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
+        <a href="https://destream.net/live/misterfoxxx547/donate  " target="_blank" onclick="warnVPN();this.parentElement.parentElement.remove()"
            style="display:block;width:100%;padding:14px;text-align:center;background:#4a90e2;color:white;text-decoration:none;border-radius:8px;margin-bottom:16px;font-weight:bold;">
           🌎 Google Pay
         </a>
-
         <p style="font-size:0.8rem;color:#888;margin:0;">
           ⚠️ Не открывается? Отключите <strong>VPN / AdBlock</strong>.
         </p>
-
         <button onclick="this.parentElement.parentElement.remove()" 
-                style="width:100%;padding:10px;margin-top:16px;background:#f1f1f1;border:none;border-radius:8px;color:#555;">
+                style="width:100%;padding:10px;margin-top:16px;background:#f1f1f2;border:none;border-radius:8px;color:#555;">
           Закрыть
         </button>
       </div>
@@ -131,6 +117,7 @@ function donateForSong(songName) {
   `;
   document.body.appendChild(modal);
 }
+
 function copyCard() {
   const card = "4400 4303 5158 7859";
   navigator.clipboard.writeText(card.replace(/\s/g, ''))
@@ -145,6 +132,7 @@ function copyCard() {
       alert(`✅ Скопировано: ${card}`);
     });
 }
+
 function copyToClipboard(text) {
   navigator.clipboard.writeText(text).catch(() => {
     const ta = document.createElement('textarea');
@@ -155,13 +143,9 @@ function copyToClipboard(text) {
     document.body.removeChild(ta);
   });
 }
-function warnVPN() {
-  // Можно убрать alert, если мешает — он срабатывает только при клике на ссылку
-  // alert("Если страница не загружается — отключите VPN или блокировщик рекламы.");
-}
 
-// Делаем функцию доступной для onclick
-// copyToClipboard = copyToClipboard;
+function warnVPN() {}
+
 function toggleAccordion(header) {
   const body = header.nextElementSibling;
   header.classList.toggle('active');
@@ -174,33 +158,51 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// === ЗАГРУЗКА ИЗ NPOINT.IO ===
-// === ЗАГРУЗКА ИЗ ВНЕШНЕГО data.json ===
+// === ЗАГРУЗКА ИЗ read.php + СОРТИРОВКА ===
 showLoader();
 const DATA_URL = "https://trv-axtuba.ru/podzemnyi/read.php";
 
-fetch(DATA_URL, { cache: 'no-store' }) // ← отключаем кэш
+fetch(DATA_URL, { cache: 'no-store' })
   .then(res => {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   })
   .then(data => {
+    // Преобразуем в нужный формат
     allGroups = Array.isArray(data) ? data.map(g => ({
       name: g.name || '',
       songs: Array.isArray(g.songs) ? g.songs : [],
       image: g.image || ''
     })) : [];
+
+// 🔥 Сортировка: исполнители → А-Я
+allGroups.sort((a, b) => {
+  const nameA = (a.name || '').toString().trim();
+  const nameB = (b.name || '').toString().trim();
+  return nameA.localeCompare(nameB, 'ru', { sensitivity: 'base' });
+});
+
+// 🔥 Сортировка: песни внутри каждого — безопасно
+allGroups.forEach(group => {
+  if (Array.isArray(group.songs)) {
+    group.songs = group.songs
+      .map(song => (song == null ? '' : String(song).trim())) // → строка, не null
+      .filter(song => song !== '') // убрать пустые
+      .sort((x, y) => x.localeCompare(y, 'ru', { sensitivity: 'base' }));
+  }
+});
+
     renderGroups(allGroups);
     updateTimeEl.textContent = new Date().toLocaleString('ru-RU');
     hideLoader();
   })
   .catch(err => {
-    console.error('Ошибка загрузки data.json:', err);
+    console.error('Ошибка загрузки данных:', err);
     container.innerHTML = `<div class="accordion"><div class="accordion-header" style="color:red">❌ Не удалось загрузить данные</div></div>`;
     hideLoader();
   });
 
-// === ДОБАВЛЕНО: слушатели ===
+// === Слушатели поиска ===
 searchInput.addEventListener('input', () => {
   const q = searchInput.value;
   filterGroups(q);
