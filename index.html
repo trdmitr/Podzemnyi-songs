@@ -45,9 +45,56 @@
 <div id="loader" class="spinner">Загрузка репертуара…</div>
 
 <main id="accordion-container" style="display: none;"></main>
-
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "MusicGroup",
+  "name": "Виталий Подземный",
+  "url": "https://trdmitr.github.io/Podzemnyi-songs/",
+  "description": "Каверы русского рока. Исполняет песни групп: Кино, Алиса, Гр.Об, Чиж & Со, Сплин, ДДТ и других. Репертуар обновляется автоматически.",
+  "genre": ["Russian Rock", "Cover Band", "Alternative Rock"],
+  "musicBy": [
+    {
+      "@type": "MusicGroup",
+      "name": "Кино"
+    },
+    {
+      "@type": "MusicGroup",
+      "name": "Алиса"
+    },
+    {
+      "@type": "MusicGroup",
+      "name": "Гражданская оборона"
+    },
+    {
+      "@type": "MusicGroup",
+      "name": "Чиж & Со"
+    },
+    {
+      "@type": "MusicGroup",
+      "name": "Сплин"
+    },
+    {
+      "@type": "MusicGroup",
+      "name": "ДДТ"
+    }
+  ],
+  "sameAs": [
+    "https://www.youtube.com/@podzemnyi",
+    "https://vk.com/podzemnyi"
+  ],
+  "potentialAction": {
+    "@type": "DonateAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://www.donationalerts.com/r/vitaliy_podzemniy"
+    }
+  }
+}
+</script>
 <footer>
-  Данные из npoint.io • Обновлено: <span id="update-time"></span>
+  Данные собраны сообществом • Обновлено: <span id="update-time"></span>
 </footer>
+
 </body>
 </html>
