@@ -13,6 +13,34 @@
     #status { margin-top: 16px; padding: 10px; border-radius: 4px; }
     .success { background: #dcfce7; color: #166534; }
     .error { background: #fee2e2; color: #b91c1c; }
+    /* Стили для контейнера (плашки) */
+  .delete-mode-container {
+    display: inline-flex;
+    align-items: center;
+    background: #f0f0f0;    /* Спокойный серый по умолчанию */
+    padding: 12px 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;    /* Отступ от "Исполнителя" */
+    cursor: pointer;
+    transition: all 0.3s ease; /* Плавная смена цвета */
+    border: 1px solid #ccc;
+    font-family: sans-serif;
+  }
+
+  /* Увеличиваем чекбокс */
+  #delete-mode {
+    transform: scale(1.5);
+    margin-right: 15px;
+    cursor: pointer;
+  }
+
+  /* МАГИЯ: если чекбокс внутри контейнера нажат, меняем стиль всего контейнера */
+  .delete-mode-container:has(#delete-mode:checked) {
+    background-color: #d9534f; /* Красный цвет (danger) */
+    border-color: #b52b27;
+    color: white;              /* Белый текст для читаемости */
+    box-shadow: 0 0 10px rgba(217, 83, 79, 0.5); /* Легкое свечение */
+  }
   </style>
 </head>
 <body>
@@ -25,23 +53,31 @@
     <button type="button" onclick="login()" style="width:80%;margin:0 auto;">🔐 Войти</button>
   </div>
 
-  <div id="form" class="hidden">
-    <label><strong>Исполнитель:</strong></label>
-    <select id="performer">
-      <option value="">— Выберите —</option>
-    </select>
-    <button type="button" onclick="toggleNew()">➕ Новый исполнитель/button>
+<div id="form" class="hidden">
+<!-- Сама разметка -->
+<label class="delete-mode-container">
+  <input type="checkbox" id="delete-mode">
+  <span>🗑️ Режим удаления</span>
+</label><br/>
+<label><strong>Исполнитель:</strong></label>
+<select id="performer" onchange="loadSongsForPerformer()">
+  <option value="">— Выберите —</option>
+</select>
+<button type="button" onclick="toggleNew()">➕ Новый</button>
+<button type="button" id="delete-group-btn" style="display:none;" onclick="deleteGroup()">❌ Удалить группу</button>
 
-    <div id="new-performer-div" class="hidden">
-      <label><strong>Новый исполнитель:</strong></label>
-      <input type="text" id="new-performer" placeholder="Например: Виктор Цой">
-    </div>
+<div id="new-performer-div" class="hidden">
+  <label><strong>Новый исполнитель:</strong></label>
+  <input type="text" id="new-performer" placeholder="Например: Виктор Цой">
+</div>
 
-    <label><strong>Название песни:</strong></label>
-    <input type="text" id="song" placeholder="Например: 18 Берёз">
+<label><strong>Песни:</strong></label>
+<div id="songs-list"></div>
 
-    <button type="button" onclick="save()">✅ Добавить песню</button>
-  </div>
+<label><<strong>Новая песня:</strong></label>
+<input type="text" id="song" placeholder="Например: 18 Берёз">
+<button type="button" onclick="saveSong()">✅ Добавить песню</button>
+</div>
 
   <div id="status"></div>
 
@@ -49,76 +85,158 @@
   🏠 На главную страницу
 </button>
 
-  <script>
-  const SAVE_URL = "https://trv-axtuba.ru/podzemnyi/save.php";
-  const DATA_URL = "https://trv-axtuba.ru/podzemnyi/read.php"; // ← ключевая строка
+<script>
+const DATA_URL = "https://trv-axtuba.ru/podzemnyi/read.php";
+const SAVE_URL = "https://trv-axtuba.ru/podzemnyi/save.php";
 
-  let currentData = [];
+let currentData = [];
 
-  function login() {
-    document.getElementById('login').style.display = 'none';
-    document.getElementById('form').classList.remove('hidden');
-    load();
+function login() {
+  document.getElementById('login').style.display = 'none';
+  document.getElementById('form').classList.remove('hidden');
+  loadAll();
+}
+
+async function loadAll() {
+  const res = await fetch(DATA_URL + '?_=' + Date.now());
+  currentData = await res.json();
+  renderPerformerSelect();
+}
+
+function renderPerformerSelect() {
+  const sel = document.getElementById('performer');
+  sel.innerHTML = '<option value="">— Выберите —</option>';
+  currentData.forEach(g => {
+    const opt = document.createElement('option');
+    opt.value = g.name;
+    opt.textContent = g.name;
+    sel.appendChild(opt);
+  });
+  document.getElementById('delete-group-btn').style.display = 'none';
+  document.getElementById('songs-list').innerHTML = '';
+}
+
+// 🔥 ОСНОВНАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ СПИСКА ПЕСЕН
+function loadSongsForPerformer() {
+  const performer = document.getElementById('performer').value;
+  const deleteMode = document.getElementById('delete-mode').checked;
+  const group = currentData.find(g => g.name === performer);
+
+  const songsDiv = document.getElementById('songs-list');
+  if (!group) {
+    songsDiv.innerHTML = '';
+    document.getElementById('delete-group-btn').style.display = 'none';
+    return;
   }
 
-  async function load() {
-    const res = await fetch(DATA_URL + '?_=' + Date.now());
-    currentData = await res.json();
-    renderPerformerSelect();
-  }
+  // Показываем кнопку удаления группы ТОЛЬКО если включён режим удаления
+  document.getElementById('delete-group-btn').style.display = deleteMode ? 'inline-block' : 'none';
 
-  function renderPerformerSelect() {
-    const sel = document.getElementById('performer');
-    sel.innerHTML = '<option value="">— Выберите —</option>';
-    currentData.forEach(g => {
-      const opt = document.createElement('option');
-      opt.value = g.name;
-      opt.textContent = g.name;
-      sel.appendChild(opt);
+  // Генерируем список песен с учётом режима удаления
+  songsDiv.innerHTML = group.songs.map(song => `
+    <div style="margin:4px 0;">
+      ${escapeHtml(song)}
+      ${deleteMode ? `<button type="button" style="margin-left:8px;font-size:0.9em;" onclick="deleteSong('${escapeHtml(performer)}', '${escapeHtml(song).replace(/'/g, "\\'")}')">🗑️</button>` : ''}
+    </div>
+  `).join('');
+}
+
+// 🔥 ОБРАБОТЧИК ИЗМЕНЕНИЯ ЧЕКБОКСА
+document.addEventListener('DOMContentLoaded', () => {
+  const deleteModeCheckbox = document.getElementById('delete-mode');
+  if (deleteModeCheckbox) {
+    deleteModeCheckbox.addEventListener('change', () => {
+      // Перезагружаем список песен при переключении режима
+      const performer = document.getElementById('performer').value;
+      if (performer) {
+        loadSongsForPerformer();
+      } else {
+        document.getElementById('songs-list').innerHTML = '';
+        document.getElementById('delete-group-btn').style.display = 'none';
+      }
     });
   }
+});
 
-  function toggleNew() {
-    document.getElementById('new-performer-div').classList.toggle('hidden');
+function toggleNew() {
+  document.getElementById('new-performer-div').classList.toggle('hidden');
+}
+
+async function saveSong() {
+  const sel = document.getElementById('performer');
+  const newPerformer = document.getElementById('new-performer').value.trim();
+  const song = document.getElementById('song').value.trim();
+
+  if (!song) return showStatus('❌ Укажите название песни', 'error');
+  let performer = sel.value || newPerformer;
+  if (!performer) return showStatus('❌ Выберите или укажите исполнителя', 'error');
+
+  let group = currentData.find(g => g.name === performer);
+  if (!group) {
+    group = { name: performer, songs: [], image: "" };
+    currentData.push(group);
+  }
+  if (!group.songs.includes(song)) {
+    group.songs.push(song);
+    group.songs.sort((a, b) => a.localeCompare(b, 'ru', { sensitivity: 'base' }));
   }
 
-  async function save() {
-    const sel = document.getElementById('performer');
-    const newPerformer = document.getElementById('new-performer').value.trim();
-    const song = document.getElementById('song').value.trim();
+  await saveData();
+  document.getElementById('song').value = '';
+  loadSongsForPerformer();
+  showStatus(`✅ Добавлено: ${song}`, 'success');
+}
 
-    if (!song) return showStatus('❌ Укажите название песни', 'error');
-    let performer = sel.value || newPerformer;
-    if (!performer) return showStatus('❌ Выберите или укажите исполнителя', 'error');
-
-    let group = currentData.find(g => g.name === performer);
-    if (!group) {
-      group = { name: performer, songs: [], image: "" };
-      currentData.push(group);
+async function deleteSong(performer, song) {
+  const group = currentData.find(g => g.name === performer);
+  if (group) {
+    group.songs = group.songs.filter(s => s !== song);
+    if (group.songs.length === 0) {
+      currentData = currentData.filter(g => g.name !== performer);
     }
-    if (!group.songs.includes(song)) group.songs.push(song);
-
-    const res = await fetch(SAVE_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(currentData)
-    });
-
-    if (res.ok) {
-      showStatus(`✅ Сохранено: ${song} → ${performer}`, 'success');
-      document.getElementById('song').value = '';
-      document.getElementById('new-performer').value = '';
-    } else {
-      showStatus('❌ Ошибка сервера', 'error');
-    }
+    await saveData();
+    loadSongsForPerformer();
+    showStatus(`🗑️ Удалено: ${song}`, 'success');
   }
+}
 
-  function showStatus(text, cls) {
-    const el = document.getElementById('status');
-    el.textContent = text;
-    el.className = cls;
-    setTimeout(() => el.textContent = '', 5000);
+async function deleteGroup() {
+  const performer = document.getElementById('performer').value;
+  if (!performer) return;
+  if (!confirm(`Точно удалить всю группу "${performer}"?`)) return;
+
+  currentData = currentData.filter(g => g.name !== performer);
+  await saveData();
+  renderPerformerSelect();
+  showStatus(`❌ Группа "${performer}" удалена`, 'success');
+}
+
+async function saveData() {
+  const res = await fetch(SAVE_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(currentData)
+  });
+  if (!res.ok) throw new Error('Ошибка сохранения');
+}
+
+function showStatus(text, cls) {
+  let el = document.getElementById('status');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'status';
+    document.body.appendChild(el);
   }
+  el.textContent = text;
+  el.className = cls;
+  setTimeout(() => el.textContent = '', 5000);
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
 </script>
 </body>
 </html>
