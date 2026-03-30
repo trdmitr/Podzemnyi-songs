@@ -106,12 +106,18 @@ async function loadAll() {
 function renderPerformerSelect() {
   const sel = document.getElementById('performer');
   sel.innerHTML = '<option value="">— Выберите —</option>';
-  currentData.forEach(g => {
-    const opt = document.createElement('option');
-    opt.value = g.name;
-    opt.textContent = g.name;
-    sel.appendChild(opt);
-  });
+  
+  // Сортируем группы по имени исполнителя (по алфавиту)
+  currentData
+    .map(g => g) // копируем массив
+    .sort((a, b) => a.name.localeCompare(b.name, 'ru', { sensitivity: 'base' }))
+    .forEach(g => {
+      const opt = document.createElement('option');
+      opt.value = g.name;
+      opt.textContent = g.name;
+      sel.appendChild(opt);
+    });
+
   document.getElementById('delete-group-btn').style.display = 'none';
   document.getElementById('songs-list').innerHTML = '';
 }
@@ -129,11 +135,16 @@ function loadSongsForPerformer() {
     return;
   }
 
+  // 🔥 ГАРАНТИРУЕМ СОРТИРОВКУ ПРИ КАЖДОМ ВЫЗОВЕ
+  const sortedSongs = [...group.songs].sort((a, b) =>
+    a.localeCompare(b, 'ru', { sensitivity: 'base' })
+  );
+
   // Показываем кнопку удаления группы ТОЛЬКО если включён режим удаления
   document.getElementById('delete-group-btn').style.display = deleteMode ? 'inline-block' : 'none';
 
-  // Генерируем список песен с учётом режима удаления
-  songsDiv.innerHTML = group.songs.map(song => `
+  // Генерируем список песен
+  songsDiv.innerHTML = sortedSongs.map(song => `
     <div style="margin:4px 0;">
       ${escapeHtml(song)}
       ${deleteMode ? `<button type="button" style="margin-left:8px;font-size:0.9em;" onclick="deleteSong('${escapeHtml(performer)}', '${escapeHtml(song).replace(/'/g, "\\'")}')">🗑️</button>` : ''}
@@ -176,6 +187,8 @@ async function saveSong() {
     group = { name: performer, songs: [], image: "" };
     currentData.push(group);
   }
+
+  // Добавляем песню и сразу сортируем по алфавиту (для русского языка)
   if (!group.songs.includes(song)) {
     group.songs.push(song);
     group.songs.sort((a, b) => a.localeCompare(b, 'ru', { sensitivity: 'base' }));
@@ -183,7 +196,7 @@ async function saveSong() {
 
   await saveData();
   document.getElementById('song').value = '';
-  loadSongsForPerformer();
+  loadSongsForPerformer(); // Обновляем список песен
   showStatus(`✅ Добавлено: ${song}`, 'success');
 }
 
